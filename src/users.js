@@ -1,6 +1,6 @@
 
 const getUsers = (request, response) => {
-    response.json(["Capture", "Somberlord", "TinyDoowy"]);
+    response.json([{id: 0, name: "Capture"}, {id: 2, name: "Somberlord"}, {id: 1, name: "TinyDoowy"}]);
 }
 
 module.exports = getUsers;

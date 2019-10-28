@@ -24,7 +24,7 @@ app.get('/', (request, response) => {
 })
 
 app.get('/users', getUsers);
-app.get('/tsvlist/:user', getTsvByUser);
+app.get('/tsvlist/:userid', getTsvByUser);
 
 app.listen(port, () => {
     console.log(`App running on port ${port}.`);
