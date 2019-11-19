@@ -18,12 +18,6 @@ const getUsers = (request, response) => {
 
 const createUser = (request, response) => {
     const { name, site, friendcode, note } = request.body.values;
-    /*const body = request.body;
-    const values = body.values;
-    const name = request.body.name;
-    const site = request.body.site;
-    const friendcode = request.body.friendcode;
-    const note = request.body.note;*/
   
     pool.query('INSERT INTO users (name, site, nbwhip, nbwarning, friendcode, note) VALUES ($1, $2, 0, 0, $3, $4)', [name, site, friendcode, note], (error, results) => {
       if (error) {
