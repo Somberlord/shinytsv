@@ -16,18 +16,31 @@ const getUsers = (request, response) => {
     })
   }
 
-const createUser = (request, response) => {
-    const { name, site, friendcode, note } = request.body.values;
-  
-    pool.query('INSERT INTO users (name, site, nbwhip, nbwarning, friendcode, note) VALUES ($1, $2, 0, 0, $3, $4)', [name, site, friendcode, note], (error, results) => {
-      if (error) {
-        throw error
-      }
-      response.status(201).send(`User added`)
-    })
+const createOrUpdateUser = (request, response) => {
+    let { name, site, nbwhip, nbwarning, friendcode, note, id } = request.body.values;
+
+    if(id === undefined) {
+      pool.query('INSERT INTO users (name, site, nbwhip, nbwarning, friendcode, note) VALUES ($1, $2, 0, 0, $3, $4)', [name, site, friendcode, note], (error, results) => {
+        if (error) {
+          throw error
+        }
+        response.status(201).send(`User added`)
+      })  
+    } else {
+      nbwhip = Number.isInteger(nbwhip) ? nbwhip : 0;
+      nbwarning = Number.isInteger(nbwarning) ? nbwhip : 0;
+      pool.query('UPDATE users set name=$2, site=$3, friendcode=$4, note=$5, nbwhip=$6, nbwarning=$7 where id=$1', 
+                  [id, name, site, friendcode, note, nbwhip, nbwarning], (error, results) => {
+        if (error) {
+          throw error
+        }
+        response.status(201).send(`User updated`)
+      })  
+    }
+    
   }
 
   module.exports = {
     getUsers,
-    createUser
+    createOrUpdateUser
   }

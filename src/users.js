@@ -8,8 +8,8 @@ const getUsers = (request, response) => {
     {id: 1, name: "TinyDoowy", site: "Doowy", nblate: 0, nbwhip: 0, nbwarning: 0, status: "En cours", friendcode: "4321-8765-0987-4321", note:"Dooowyyyyyyyy"}]);*/
 }
 
-const createUser = (request, response) => {
-    db.createUser(request, response);
+const createOrUpdateUser = (request, response) => {
+    db.createOrUpdateUser(request, response);
   }
 
-module.exports = {getUsers, createUser};
+module.exports = {getUsers, createOrUpdateUser: createOrUpdateUser};

@@ -1,4 +1,4 @@
-const { getUsers, createUser } = require('./users');
+const { getUsers, createOrUpdateUser } = require('./users');
 const getTsvByUser = require('./tsv');
 
 const express = require('express');
@@ -25,7 +25,7 @@ app.get('/', (request, response) => {
 
 app.get('/users', getUsers);
 app.get('/tsvlist/:userid', getTsvByUser);
-app.post('/users', createUser)
+app.post('/users', createOrUpdateUser)
 
 app.listen(port, () => {
     console.log(`App running on port ${port}.`);
