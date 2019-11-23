@@ -5,6 +5,7 @@ const conf = {
     db_host: 'hostnameorip',
     db_database: 'dbname',
     db_port: dbport,
+    cors_host: 'http://host:port'
 }
 
 module.exports = conf
