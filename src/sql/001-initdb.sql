@@ -1,6 +1,3 @@
-CREATE TABLE
-ALTER TABLE
-[somberlord@vps755826 db]$ cat 001-initdb.sql 
 CREATE TABLE public.users
 (
     id SERIAL PRIMARY KEY,
