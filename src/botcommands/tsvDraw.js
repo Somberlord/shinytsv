@@ -133,6 +133,10 @@ exports.run = async (bot, msg, args) => {
   if(channel === undefined || msg.member === undefined || isNaN(nbwinners)) {
     return 1;
   }
+  if(!msg.member.hasPermission("MANAGE_GUILD", false, true, true)) {
+    msg.channel.send("Vous n'avez pas les permissions pour utiliser cette commande");
+    return 2;
+  }
   message = messageContent = args.slice(2).join(' ');
   let bddmsg = await getLastMessageFromDb(msg.guild.id)
     .catch(err => {throw err});

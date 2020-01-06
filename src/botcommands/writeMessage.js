@@ -21,10 +21,10 @@ exports.run = async (bot, msg, args) => {
   if(channel === undefined || msg.member === undefined) {
     return 1;
   }
-  /*if(!msg.member.hasPermission("MANAGE_GUILD", false, true, true)) {
+  if(!msg.member.hasPermission("MANAGE_GUILD", false, true, true)) {
     msg.channel.send("Vous n'avez pas les permissions pour utiliser cette commande");
     return 2;
-  }*/
+  }
   
   messageContent = args.slice(1).join(' ');
   channel.send(messageContent)
