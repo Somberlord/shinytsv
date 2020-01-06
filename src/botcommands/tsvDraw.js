@@ -65,9 +65,9 @@ async function saveUsersToDb(user_ids, type, msg, msg_id, guild_id) {
     }
 }
 
-function displayWinner(bot, msg, user_ids) {
+function displayWinner(bot, channel, user_ids, message) {
     userlist = user_ids.map(user_id => bot.users.get(user_id)).join(" ");
-    msg.channel.send("Liste des participants " + userlist);
+    channel.send(message + "\n" + userlist);
 }
 
 async function getAllpotentialFromDb(msg, msg_id) {
@@ -77,24 +77,63 @@ async function getAllpotentialFromDb(msg, msg_id) {
                 if(error) {
                     msg.channel.send("erreur lors de l'enregistrement du participant " + userid + " " + error);
                 } else {
-                    rowres = results.rows.map(user => user.user_id);
-                    console.log(rowres);
                     resolve(results.rows.map(user => user.user_id));
                 }
             });
     });
 }
 
-async function doDraw(msg, msg_id) {
-    return await getAllpotentialFromDb(msg, msg_id);
-    // récupérer les users ayant encore des chances en bdd
-    // faire le tirage
+async function saveWinner(winnerid, message_id) {
+    return new Promise( (resolve, reject) => {
+        bdd.query("UPDATE botparticipants SET participation='WINNER' WHERE user_id = $1 AND message_id = $2", 
+                        [winnerid, message_id], (error, results) => {
+                if(error) {
+                    msg.channel.send("erreur lors de l'enregistrement du participant " + userid + " " + error);
+                } else {
+                    resolve(results.rows.map(user => user.user_id));
+                }
+            });
+    });
+}
+
+async function updateWinner(winnerid) {
+    return new Promise( (resolve, reject) => {
+        bdd.query("UPDATE botparticipants SET participation='DONE' WHERE user_id = $1 AND participation <> 'WINNER'", 
+                        [winnerid], (error, results) => {
+                if(error) {
+                    msg.channel.send("erreur lors de l'enregistrement du participant " + userid + " " + error);
+                } else {
+                    resolve(results.rows.map(user => user.user_id));
+                }
+            });
+    });
+}
+
+async function doDraw(msg, msg_id, nbwinner) {
+    let allusers =  await getAllpotentialFromDb(msg, msg_id);
+    let winnerlist = [];
+    for(let i = 0 ; i < nbwinner ; i++) {
+        let winnerid = allusers[Math.floor(Math.random() * allusers.length)];
+        await saveWinner(winnerid, msg_id);
+        await updateWinner(winnerid);
+        winnerlist.push(winnerid);
+        allusers = allusers.filter( userid => userid != winnerid);
+        if(allusers.length === 0 ) {
+            return winnerlist;
+        }
+    }
+    return winnerlist;
     // maj la bdd avec le vainqueur
-    // faire le message d'annonce
 }
 
 exports.run = async (bot, msg, args) => {
-  msg.channel.send(bot.ping + "ms");
+  channelid = args[0].replace(/\D/g,'');
+  channel = msg.guild.channels.get(channelid);
+  nbwinners = parseInt(args[1], 10);
+  if(channel === undefined || msg.member === undefined || isNaN(nbwinners)) {
+    return 1;
+  }
+  message = messageContent = args.slice(2).join(' ');
   let bddmsg = await getLastMessageFromDb(msg.guild.id)
     .catch(err => {throw err});
   if(bddmsg === undefined) {
@@ -107,8 +146,8 @@ exports.run = async (bot, msg, args) => {
                 if(reaction._emoji.id === config.reactions.tsv_egg) {
                     tsv_egg_ids = reaction.users.filter(user => user != bot.user).map(user =>user.id);
                     await saveUsersToDb(tsv_egg_ids, 'tsv_egg', msg, bddmsg.message_id, bddmsg.guild_id);
-                    let drawResult = await doDraw(msg, bddmsg.message_id);
-                    displayWinner(bot, msg, drawResult);
+                    let drawResult = await doDraw(channel, bddmsg.message_id, nbwinners, message);
+                    displayWinner(bot, channel, drawResult, message);
                 }
                 if(reaction._emoji.id === config.reactions.tsv_nexttime) {
                     tsv_nexttime_ids = reaction.users.filter(user => user != bot.user).map(user =>user.id);
@@ -122,5 +161,5 @@ exports.run = async (bot, msg, args) => {
 exports.config = {
   names: ["tsv-loterie", "tl"],
   auth: 1,
-  usage: `${config.prefix}tsv-loterie <channel> <message>`
+  usage: `${config.prefix}tsv-loterie <channel> <nb winners> <message>`
 }

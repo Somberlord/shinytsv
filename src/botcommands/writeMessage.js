@@ -29,12 +29,10 @@ exports.run = async (bot, msg, args) => {
   messageContent = args.slice(1).join(' ');
   channel.send(messageContent)
     .then(message => {
-      console.log(message.id);
       saveMessageInDbAsync(message);
       bot.guilds.get(message.guild.id).channels.get(message.channel.id).fetchMessage(message.id)
         .then(fetchedmsg => {
           addReactions(fetchedmsg);
-          console.log(fetchedmsg.content);
         })
     })
     .catch(console.error);
