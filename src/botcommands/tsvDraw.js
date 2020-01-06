@@ -1,0 +1,126 @@
+const config = require("../config/botconfig");
+const bdd = require('../utils/bdd');
+
+async function getLastMessageFromDb(guild_id) {
+    return new Promise( (resolve, reject) => {
+        bdd.query('SELECT message_id, channel_id, guild_id, id FROM botreactionmessage WHERE guild_id = $1 ORDER BY id DESC LIMIT 1 ', [guild_id], (error, results) => {
+            if (error) {
+                reject(error);
+              } else {
+                resolve(results.rows[0]);
+              }
+        });
+    });
+}
+
+async function doSave(query, data) {
+    return new Promise( (resolve, reject) => {
+        bdd.query(query, data, (error, results) => {
+            if (error) {
+                reject(error);
+              } else {
+                resolve(results.rows[0]);
+              }
+        });
+    });
+}
+
+
+async function saveUsersToDb(user_ids, type, msg, msg_id, guild_id) {
+    let values = "";
+    let data = [];
+    let doupdate = "";
+    if(type === 'tsv_egg') {
+        doupdate = "DO UPDATE SET participation='PARTICIPANT'";
+        let cpt = 0;
+        user_ids.forEach( userid => {
+            if(values != "") {
+                values = values + ",";
+            }
+            values = values + "($" + (cpt+1) + ",$" + (cpt+2) + ",$" + (cpt+3) + ",'PARTICIPANT')";
+            data = data.concat([msg_id, userid, guild_id]);
+            cpt = cpt+3;
+        });
+    } else if(type === 'tsv_nexttime') {
+        doupdate = "DO NOTHING";
+        let cpt = 0;
+        user_ids.forEach( userid => {
+            if(values != "") {
+                values = values + ",";
+            }
+            values = values + "($" + (cpt+1) + ",$" + (cpt+2) + ",$" + (cpt+3) + ",'RETRY')";
+            data = data.concat([msg_id, userid, guild_id]);
+            cpt = cpt+3;
+        });
+    } else {
+        console.log('UNRECOGNIZED TYPE');
+        return false;
+    }
+    try {
+        query = "INSERT INTO botparticipants(message_id, user_id, guild_id, participation) values" + values + " ON CONFLICT(message_id, user_id, guild_id) "+ doupdate;
+        await doSave(query, data);
+    } catch(error) {
+        msg.channel.send("erreur lors de l'enregistrement des participants " + error);
+        return false;
+    }
+}
+
+function displayWinner(bot, msg, user_ids) {
+    userlist = user_ids.map(user_id => bot.users.get(user_id)).join(" ");
+    msg.channel.send("Liste des participants " + userlist);
+}
+
+async function getAllpotentialFromDb(msg, msg_id) {
+    return new Promise( (resolve, reject) => {
+        bdd.query("SELECT user_id FROM botparticipants WHERE user_id IN (SELECT user_id FROM botparticipants b2 WHERE b2.message_id=$1 AND b2.participation='PARTICIPANT') AND (participation='PARTICIPANT' OR participation='RETRY')", 
+                        [msg_id], (error, results) => {
+                if(error) {
+                    msg.channel.send("erreur lors de l'enregistrement du participant " + userid + " " + error);
+                } else {
+                    rowres = results.rows.map(user => user.user_id);
+                    console.log(rowres);
+                    resolve(results.rows.map(user => user.user_id));
+                }
+            });
+    });
+}
+
+async function doDraw(msg, msg_id) {
+    return await getAllpotentialFromDb(msg, msg_id);
+    // récupérer les users ayant encore des chances en bdd
+    // faire le tirage
+    // maj la bdd avec le vainqueur
+    // faire le message d'annonce
+}
+
+exports.run = async (bot, msg, args) => {
+  msg.channel.send(bot.ping + "ms");
+  let bddmsg = await getLastMessageFromDb(msg.guild.id)
+    .catch(err => {throw err});
+  if(bddmsg === undefined) {
+      return 2;
+  }
+  bot.guilds.get(bddmsg.guild_id).channels.get(bddmsg.channel_id).fetchMessage(bddmsg.message_id)
+        .then(fetchedmsg => {
+            fetchedmsg.reactions.forEach(async (reaction) => {
+                await reaction.fetchUsers();
+                if(reaction._emoji.id === config.reactions.tsv_egg) {
+                    tsv_egg_ids = reaction.users.filter(user => user != bot.user).map(user =>user.id);
+                    await saveUsersToDb(tsv_egg_ids, 'tsv_egg', msg, bddmsg.message_id, bddmsg.guild_id);
+                    let drawResult = await doDraw(msg, bddmsg.message_id);
+                    displayWinner(bot, msg, drawResult);
+                }
+                if(reaction._emoji.id === config.reactions.tsv_nexttime) {
+                    tsv_nexttime_ids = reaction.users.filter(user => user != bot.user).map(user =>user.id);
+                    saveUsersToDb(tsv_nexttime_ids, 'tsv_nexttime', msg, bddmsg.message_id, bddmsg.guild_id);
+                }
+            });
+        });
+  return 0;
+}
+
+exports.config = {
+  names: ["tsv-loterie", "tl"],
+  auth: 1,
+  usage: `${config.prefix}tsv-loterie <channel> <message>`
+}

@@ -38,6 +38,7 @@ function start() {
     client.on('message', async msg => {
         // Prevent bot from responding to its own messages
         if (msg.author == client.user) return;
+        if (msg.author.bot) return;
         if (msg.channel.type != "text" && msg.channel.type != "dm") return;
         if (!msg.content.startsWith(config.prefix)) return;
     
@@ -50,7 +51,7 @@ function start() {
             .catch(err => {
                 console.log(err);
                 config.admins.forEach(admin => {
-                client.users.get(admin).send(err);
+                    client.users.get(admin).send(err);
                 })
             })
             if (output != 0) {
