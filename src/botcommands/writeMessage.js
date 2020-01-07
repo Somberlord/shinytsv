@@ -33,6 +33,7 @@ exports.run = async (bot, msg, args) => {
       bot.guilds.get(message.guild.id).channels.get(message.channel.id).fetchMessage(message.id)
         .then(fetchedmsg => {
           addReactions(fetchedmsg);
+          fetchedmsg.pin();
         })
     })
     .catch(console.error);
