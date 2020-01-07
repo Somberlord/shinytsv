@@ -5,6 +5,7 @@ const botstart = require('./bot');
 
 if(conf.start.includes(constants.WEB)) {
     appstart();
-} else if( conf.start.includes(constants.BOT)) {
+}
+if( conf.start.includes(constants.BOT)) {
     botstart();
 }
