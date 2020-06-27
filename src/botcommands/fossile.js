@@ -12,13 +12,13 @@ async function checkRole(msg) {
   }
 }
 
-function displayPokemon(msg, value) {
+async function displayPokemon(msg, value) {
   let firstMon = Math.floor(value/4);
   let filteredArray = ranArray.filter((val) => {return val != firstMon});
   let ranNumber = Math.floor(Math.random() * 3);
   let secondMon = filteredArray[ranNumber];
   await msg.member.addRole(config.fossile_role);
-  msg.channel.send(msg.author + ' a déterré ' + config.fossile_name[firstMon] + ' et ' + config.fossile_name[secondMon]);
+  await msg.channel.send(msg.author + ' a déterré ' + config.fossile_name[firstMon] + ' et ' + config.fossile_name[secondMon]);
 }
 
 exports.run = async (bot, msg, args) => {
