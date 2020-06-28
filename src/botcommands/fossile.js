@@ -18,7 +18,8 @@ async function displayPokemon(msg, value) {
   let ranNumber = Math.floor(Math.random() * 3);
   let secondMon = filteredArray[ranNumber];
   await msg.member.addRole(config.fossile_role);
-  await msg.channel.send(msg.author + ' a déterré ' + config.fossile_name[firstMon] + ' et ' + config.fossile_name[secondMon]);
+  let sentMsg = await msg.channel.send(msg.author + ' a déterré ' + config.fossile_name[firstMon] + ' et ' + config.fossile_name[secondMon]);
+  sentMsg.pin();
 }
 
 exports.run = async (bot, msg, args) => {
